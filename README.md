@@ -1,4 +1,4 @@
-# QR-Code-Encryption
+# QR Code Encryption in Python
 
 This python script was developed as a part to the project for the IGEM (international Genetic Enegineered Machines) competition by team Groningen 2019.
 
