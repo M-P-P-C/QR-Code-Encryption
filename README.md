@@ -10,7 +10,7 @@ The goal of the script is to develop QR codes with AES encrypted messages and be
 
 Encryption of a message will output a 3D version of the QR code to be 3D printed, or in PNG format.
 
-Extruded version is achieved by extruding the png version using the numpy2stl script
+The extruded version (3D file) is achieved by extruding the png version using the numpy2stl script
 
 HOW TO RUN:
 - in the downloaded folder run the command "pip install -r requirements.txt" to install all requirements
