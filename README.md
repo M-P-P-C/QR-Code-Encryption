@@ -17,7 +17,7 @@ HOW TO RUN:
 - run python script "main.py" and follow instructions in command line
 - The final QR code files are outputted in the same folder as the python script
 
-
+An Example of the prompts given by the main script:
 <p align="center">
-  <img src="https://raw.githubusercontent.com/M-P-P-C/QR-Code-Encryption/master/Example_outputs/tempsnip.png" width="400">
+  <img src="https://raw.githubusercontent.com/M-P-P-C/QR-Code-Encryption/master/Example_outputs/tempsnip.png" width="600">
 </p>
