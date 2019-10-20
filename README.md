@@ -19,5 +19,5 @@ HOW TO RUN:
 
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/M-P-P-C/QR-Code-Encryption/master/tempsnip.png" width="400">
+  <img src="https://raw.githubusercontent.com/M-P-P-C/QR-Code-Encryption/master/Example_outputs/tempsnip.png" width="400">
 </p>
