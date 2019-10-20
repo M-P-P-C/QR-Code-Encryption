@@ -5,18 +5,17 @@
 #make file with list of dependencies to make sure it's easy to just run the code
  #pip freeze > requirements.txt.
  #pip install -r requirements.txt
-#implement question whether to enRYPT message or not!
-#implement 3d extrusion
 #implement decoding
 #implement reader (zqr_test) to send message straight to decoder
 #implement algorithm to look for correct location of freecad libraries
 #implement question wether freecad should be used to allow it to be run without having to import library if not desired
 
-#get python 3.6 to run FreeCAD? that forces users to download two specific softwares
 #get stl_tools to work so that everything is done within python
 #use this tool but it has to be done outside of python #https://github.com/rcalme/svg-to-stl
 
 import os
+
+#if you previously installed the "crypto" package the name in "lib/site-packages" of the folder needs to be changed from "crypto" to "Crypto"
 
 from Crypto.Cipher import AES # pip install pycryptodome, If python won't recognize the crypto package make sure it's spelle the same way as in the folder of the package
 from Crypto.Protocol.KDF import PBKDF2
@@ -28,13 +27,11 @@ import qrcode
 import qrcode.image.svg
 from lxml import etree
 
-from base64 import b64encode #CHECK WHERE I USED THIS
+import base64 #
 
-import binascii # used to put encrypted message into characters supported by the qr code
+#import binascii # used to put encrypted message into characters supported by the qr code
 
 import sys 
-#sys.path.append("C:\Program Files\FreeCAD 0.18\\bin") #this fetches the pyd files to import FreeCAD commands
-
 
 import numpy
 sys.path.append(os.path.join(os.path.dirname(__file__), "lib")) #ads current directory to path to find numpy2stl
@@ -45,17 +42,17 @@ from PIL import Image
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM #turn SVG into PNG
 
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 
-#import pymesh
+import QRCodeGcodev2  #script to create gcode from QRcode
 
-#import gcody
 
 class Encryptor:
-    def __init__(self, key):
-        self.key = key
-        self.iv = b'6\xf1\xb7\xfc\xcf\t3!l\xe9\x16)\x06\x96\x8d\xb4' #the initialization vector for the encryption
-
+    def __init__(self, key, salt):
+        self.key = key #hashlib.sha256(key).digest() 
+        self.iv = Random.new().read(AES.block_size) #the initialization vector for the encryption
+        self.salt = salt
+        
     def pad(self, s):
         length = AES.block_size - (len(s) % AES.block_size)
         print(s + b"\0" * length)
@@ -63,14 +60,15 @@ class Encryptor:
         
 
     def encrypt(self, message, key, key_size=256):
+        
         message = self.pad(message)
         
         #iv = b'6\xf1\xb7\xfc\xcf\t3!l\xe9\x16)\x06\x96\x8d\xb4' #Random.new().read(AES.block_size)
-        
+
         cipher = AES.new(key, AES.MODE_CBC, self.iv)
-        encrypted =iv + cipher.encrypt(message)
+        encrypted = self.iv + cipher.encrypt(message)
         print (encrypted)   
-        encrypted= binascii.hexlify(encrypted) #putting encrypted message into hex format with acceptable characters for QR code
+        encrypted= base64.b64encode(encrypted) #binascii.hexlify(encrypted) #putting encrypted message into hex format with acceptable characters for QR code
         print (encrypted)
         encryptedSTR=encrypted.decode("utf-8") #move byte string to text
 
@@ -90,10 +88,12 @@ class Encryptor:
         enc.qrcodeSVG(message)
 
 
-    def decrypt(self, ciphertext, key): #NOT FINISHED
-        ciphertext = binascii.unhexlify(ciphertext) #puts in into byte format
-        #iv = ciphertext[:AES.block_size]
-        decipher = AES.new(key, AES.MODE_CBC, self.iv)
+    def decrypt(self, ciphertext, key): 
+        print("\nEnter Password message was encrypted with: IGEM\n")
+        ciphertext = base64.b64decode(ciphertext) #binascii.unhexlify(ciphertext) #puts in into byte format
+
+        iv = ciphertext[:AES.block_size]
+        decipher = AES.new(key, AES.MODE_CBC, iv)
         #ENCRYPTED=binascii.unhexlify(ciphertext)
         DECRYPTED=decipher.decrypt(ciphertext[AES.block_size:])
         DECRYPTED2 = DECRYPTED.rstrip(b"\0") #takes away padding
@@ -131,12 +131,14 @@ class Encryptor:
         tree = etree.parse(open('QRSVGpy.svg'))
         
         pxl = str(int(sizepxl/10)) + "mm"
+
+        dessiz= 0.8 #desired size for the reduced square QR code
         
         for element in tree.iter(): #this loop finds all squares and makes them small
             if element.tag.split("}")[1] == "rect":
                 if element.get("width") == pxl:
-                    element.set("width", str(int(element.get("width")[0])*0.8)+"mm")
-                    element.set("height", str(int(element.get("height")[0])*0.8)+"mm")
+                    element.set("width", str(int(element.get("width")[0])*dessiz)+"mm")
+                    element.set("height", str(int(element.get("height")[0])*dessiz)+"mm")
 
         tree.write('QRSVGpysmall.svg') #saves modified SVG into file 
 
@@ -159,9 +161,16 @@ class Encryptor:
         A= numpy.where(A>20, 0, 255) #invert colors of image so the extrusion extrudes the black colours
         #A=A
 
-        sub=0 #57
+        #Full pixel size is 14x14
 
-        A[27:40, 27:126] = 255
+        x=2
+        if x==2:
+            sub = 14*4 #57 (for small non ecrypted QRcode)
+        elif x==3:
+            sub = -14*7
+
+
+        A[27:40, 27:126] = 255 #the following values are all set to 255 to make the big squares solid rather than with dots
         A[27:126, 27:40] = 255
         A[113:126, 27:126] = 255
         A[27:126, 113:126] = 255        
@@ -210,7 +219,9 @@ class Encryptor:
 clear = lambda: os.system('cls')
 clear()
 
-salt= '1d2f2' #secrets.token_hex(8) #generates a string of random numbers to use as salt
+Salt_size=8
+
+salt='1d2f2' # secrets.token_hex(Salt_size) #'1d2f2'  #generates a string of random numbers to use as salt
 
 gate = 0
 
@@ -218,20 +229,20 @@ while gate == 0:
     password = str(input("Setting up stuff. Enter a password that will be used for decryption: "))
     repassword = str(input("Confirm password: "))
 
-    key = PBKDF2(password, salt, dkLen=16, count=2000)
+    key = PBKDF2(password, salt, dkLen=16, count=2000) #salting process
 
     if password == repassword:
         gate=1
     else:
-        print("Passwords Mismatched!")
+        print("Passwords Mismatched! Please try again")
 
     if gate == 1:
         break
 
-enc = Encryptor(key)
+enc = Encryptor(key, salt)
 
 while gate == 1:
-    choice = input("1. Press '1' to encrypt messsage.\n2. Press '2' to decrypt message.\n3. Press '3' to create QR code without encryption.\n4. Press '4' to exit.\n") #clear()
+    choice = input("1. Press '1' to encrypt messsage.\n2. Press '2' to decrypt message.\n3. Press '3' to create QR code without encryption.\n4. Press '4' to read QR code.\n5. Press '5' to generate gcode to 3D print QR code.\n6. Press '6' to exit.\n") #clear()
 
     if choice == '1':
         enc.encrypt(str(input("Enter message to encrypt: ")).encode(), key)
@@ -240,6 +251,11 @@ while gate == 1:
     elif choice == '3':
         enc.nocrypt(str(input("Enter message: ")).encode("utf-8"))
     elif choice == '4':
+        import QRcodereaderpython
+        print('wait for camera to initialize')
+    elif choice == '5':
+        QRCodeGcodev2.QRgcode(str(input("Enter name of QR code png file: \n")))
+    elif choice == '6':
         exit()
     else:
         print("Please select a valid option!")
