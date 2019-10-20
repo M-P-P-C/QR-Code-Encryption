@@ -2,7 +2,7 @@
 
 This python script was developed as a part to the project for the IGEM (international Genetic Enegineered Machines) competition by team Groningen 2019.
 
-![alt text](https://raw.githubusercontent.com/M-P-P-C/QR-Code-Encryption/master/Example_QRcode_Encrypted.png)
+![alt text](https://github.com/M-P-P-C/QR-Code-Encryption/blob/master/Example_QRcode_encrypted.png?raw=true)
 
 
 The goal of the script is to develop QR codes with AES encrypted messages and be able to decrypt them.
