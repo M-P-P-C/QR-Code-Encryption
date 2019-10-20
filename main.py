@@ -44,7 +44,7 @@ from reportlab.graphics import renderPM #turn SVG into PNG
 
 #import matplotlib.pyplot as plt
 
-import QRCodeGcodev2  #script to create gcode from QRcode
+import QRCodeGcodev2  #script to create gcode from QRcode (A script from my repository)
 
 
 class Encryptor:
@@ -53,13 +53,13 @@ class Encryptor:
         self.iv = Random.new().read(AES.block_size) #the initialization vector for the encryption
         self.salt = salt
         
-    def pad(self, s):
+    def pad(self, s): #function to pad message to encrypt in order to meet the requirement of being a multiple of 16 bytes
         length = AES.block_size - (len(s) % AES.block_size)
         print(s + b"\0" * length)
         return s + b"\0" * length
         
 
-    def encrypt(self, message, key, key_size=256):
+    def encrypt(self, message, key, key_size=256, ThrD=0): #function to encrypt message
         
         message = self.pad(message)
         
@@ -73,24 +73,19 @@ class Encryptor:
         encryptedSTR=encrypted.decode("utf-8") #move byte string to text
 
         enc.qrcodeSVG(encryptedSTR)
+        
         #iv = Random.new().read(AES.block_size)
         #cipher = AES.new(key, AES.MODE_CBC, iv)
         #return iv + cipher.encrypt(message)
 
-    def nocrypt(self, message): #this function generates a qr code without the encryption
-        #message = self.pad(message)
-        #cipher = AES.new(key, AES.MODE_CBC)
-        #encrypted =cipher.encrypt(message)
+    def nocrypt(self, message, ThrD=0): #this function generates a qr code without the encryption
 
-        #encrypted= binascii.hexlify(encrypted) #putting encrypted message into hex format with acceptable characters for QR code
-        #print (encrypted)
-        #encryptedSTR=encrypted.decode("utf-8") #move byte string to text
-        enc.qrcodeSVG(message)
+        enc.qrcodeSVG(message, ThrD)
 
 
     def decrypt(self, ciphertext, key): 
         print("\nEnter Password message was encrypted with: IGEM\n")
-        ciphertext = base64.b64decode(ciphertext) #binascii.unhexlify(ciphertext) #puts in into byte format
+        ciphertext = base64.b64decode(ciphertext) #puts in into byte format for algorithm to decrypt
 
         iv = ciphertext[:AES.block_size]
         decipher = AES.new(key, AES.MODE_CBC, iv)
@@ -98,10 +93,10 @@ class Encryptor:
         DECRYPTED=decipher.decrypt(ciphertext[AES.block_size:])
         DECRYPTED2 = DECRYPTED.rstrip(b"\0") #takes away padding
         DECRYPTED3 = DECRYPTED2.decode("utf-8") 
-        #plaintext = cipher.decrypt(ciphertext[AES.block_size:])
-        print(DECRYPTED3)
 
-    def qrcodeSVG(self, msg): #this function makes the QR code and saves it as an SVG
+        print("The secret message is: " + DECRYPTED3 + "\n") #print decrypted message
+
+    def qrcodeSVG(self, msg, ThrD=0): #this function makes the QR code and saves it as an SVG (3D file)
         
         self.sizepxl = 50
         self.bord = 2
@@ -121,18 +116,14 @@ class Encryptor:
 
         img.save("QRSVGpy.svg")
         
-        #f=read('C:/Users/maria/OneDrive/Documentos/Groningen/Groningen 4th Year 2018/iGEM/QR APP/QRoningen Final/QRSVGpy.svg')
+        enc.editSVG(self.sizepxl, ThrD) #calls function to makes squares of QR code small before extrusion
 
-        #fo = open("QRSVGpy.svg", "a") # safer than w mode
-
-        enc.editSVG(self.sizepxl) #calls function to makes squares of QR code small before extrusion
-
-    def editSVG(self, sizepxl): #this function edits the svg and makes the squares in the QR code small
+    def editSVG(self, sizepxl, ThrD=0): #this function edits the svg and makes the squares in the QR code small
         tree = etree.parse(open('QRSVGpy.svg'))
         
         pxl = str(int(sizepxl/10)) + "mm"
 
-        dessiz= 0.8 #desired size for the reduced square QR code
+        dessiz= 0.8 #desired size for the reduced square QR code, recommended 0.8
         
         for element in tree.iter(): #this loop finds all squares and makes them small
             if element.tag.split("}")[1] == "rect":
@@ -146,19 +137,23 @@ class Encryptor:
 
         drawing = svg2rlg('QRSVGpysmall.svg')
 
-        renderPM.drawToFile(drawing, "QRSVGpysmall.png", fmt="PNG")
+        #renderPM.drawToFile(drawing, "QRSVGpysmall.png", fmt="PNG") #Uncomment this line to save automatically a png of the QR code with the smaller squares
         
-        enc.extrudeSVG()
+        QRcodesmallsq = renderPM.drawToPIL(drawing) #This line saves the svg into a png to work with later with numpy as an array
 
-    def extrudeSVG(self): #extrudes qr code and generates 3D file to make stamp
-        #A = open('QRSVGpysmall.svg')
-        #A = gaussian_filter(A, 1)  # smoothing
-        A = Image.open('QRSVGpysmall.png').convert('RGBA')
+        if ThrD == 1:
+            enc.extrudeSVG(QRcodesmallsq)
+
+
+    def extrudeSVG(self, QRcode): #extrudes qr code and generates 3D file to make stamp
+
+
+        #QRcode = Image.open('QRSVGpysmall.png').convert('RGBA') #uncomment this when extruding an existing png
         
-        A=numpy.array(A)
-        #A= numpy.where(A>150, 0, 255) #invert colors of image so the extrusion extrudes the black colours
+        A=numpy.array(QRcode)
+
         A=A[:,:,0]
-        A= numpy.where(A>20, 0, 255) #invert colors of image so the extrusion extrudes the black colours
+        A= numpy.where(A>20, 0, 255) #invert colors of image so the extrusion extrudes the black colors
         #A=A
 
         #Full pixel size is 14x14
@@ -245,14 +240,16 @@ while gate == 1:
     choice = input("1. Press '1' to encrypt messsage.\n2. Press '2' to decrypt message.\n3. Press '3' to create QR code without encryption.\n4. Press '4' to read QR code.\n5. Press '5' to generate gcode to 3D print QR code.\n6. Press '6' to exit.\n") #clear()
 
     if choice == '1':
+        ThrD=str(input("Do you want a 3D stamp? (yes=1 / no=0)"))
         enc.encrypt(str(input("Enter message to encrypt: ")).encode(), key)
     elif choice == '2':
         enc.decrypt(str(input("Enter message to decrypt: ")).encode(), key)
     elif choice == '3':
-        enc.nocrypt(str(input("Enter message: ")).encode("utf-8"))
+        ThrD=str(input("Do you want a 3D stamp? (yes=1 / no=0)"))
+        enc.nocrypt(str(input("Enter message: ")).encode("utf-8"), ThrD)
     elif choice == '4':
+        print('wait for camera to initialize\n')
         import QRcodereaderpython
-        print('wait for camera to initialize')
     elif choice == '5':
         QRCodeGcodev2.QRgcode(str(input("Enter name of QR code png file: \n")))
     elif choice == '6':
