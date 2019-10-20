@@ -1,3 +1,5 @@
+#This file was taken from the STL_TOOLS library for python
+
 import struct
 import numpy as np
 from itertools import product
