@@ -14,5 +14,5 @@ Extruded version is achieved by extruding the png version using the numpy2stl sc
 
 HOW TO RUN:
 - in the downloaded folder run the command "pip install -r requirements.txt" to install all requirements
-- run python script "aesQRv2.py" and follow instructions in command line
+- run python script "main.py" and follow instructions in command line
 - The final QR code files are outputted in the same folder as the python script
