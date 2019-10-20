@@ -16,3 +16,8 @@ HOW TO RUN:
 - in the downloaded folder run the command "pip install -r requirements.txt" to install all requirements
 - run python script "main.py" and follow instructions in command line
 - The final QR code files are outputted in the same folder as the python script
+
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/M-P-P-C/QR-Code-Encryption/master/tempsnip.png" width="400">
+</p>
