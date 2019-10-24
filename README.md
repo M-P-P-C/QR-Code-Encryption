@@ -12,7 +12,7 @@ Encryption of a message will output a 3D version of the QR code to be 3D printed
 
 The extruded version (3D file) is achieved by extruding the png version using the numpy2stl script
 
-HOW TO RUN:
+<b>HOW TO RUN:</b>
 - in the downloaded folder run the command "pip install -r requirements.txt" to install all requirements
 - run python script "main.py" and follow instructions in command line
 - The final QR code files are outputted in the same folder as the python script
